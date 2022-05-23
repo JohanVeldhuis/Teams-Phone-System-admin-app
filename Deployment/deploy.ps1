@@ -29,6 +29,22 @@ $context = [Microsoft.Azure.Commands.Common.Authentication.Abstractions.AzureRmP
 $aadToken = [Microsoft.Azure.Commands.Common.Authentication.AzureSession]::Instance.AuthenticationFactory.Authenticate($context.Account, $context.Environment, $context.Tenant.Id.ToString(), $null, [Microsoft.Azure.Commands.Common.Authentication.ShowDialog]::Never, $null, "https://graph.windows.net").AccessToken
 Connect-AzureAD -AadAccessToken $aadToken -AccountId $context.Account.Id -TenantId $context.tenant.id
 
+# Validating if multiple Azure Subscriptions are active
+[array]$AzSubscriptions = Get-AzSubscription |Where-Object {$_.State -eq "Enabled"}
+$menu = @{}
+If($(Get-AzSubscription |Where-Object {$_.State -eq "Enabled"}).Count -gt 1)
+{
+    Write-Host "Multiple active Azure Subscriptions found, please select a subscription from the list below:"
+    for ($i=1;$i -le $AzSubscriptions.count; $i++) 
+    { 
+            Write-Host "$i. $($AzSubscriptions[$i-1].Id)" 
+            $menu.Add($i,($AzSubScriptions[$i-1].Id))
+    }
+    [int]$AZSelectedSubscription = Read-Host 'Enter selection'
+    $selection = $menu.Item($AZSelectedSubscription) ; 
+    Select-AzSubscription -Subscription $selection
+}
+
 write-host -ForegroundColor blue "Checking if app '$displayName' is already registered"
 $AAdapp = Get-AzureADApplication -Filter "DisplayName eq '$displayName'"
 If ($AAdapp.Count -gt 1) {
